@@ -5,7 +5,11 @@ set -euxo pipefail
 REV=$1
 
 if [[ ! -d ord ]]; then
+<<<<<<< HEAD
   git clone https://github.com/apezord/ord-dogecoin.git
+=======
+  git clone https://github.com/ordinals/ord.git
+>>>>>>> 5c09dd6c38136a95370eb5274d23a38b59306bb8
 fi
 
 cd ord

@@ -7,7 +7,7 @@ fn output_found() {
     "--index-sats list 5b2a3f53f605d62c53e62932dac6925e3d74afa5a4b459745c36d42d0ed26a69:0",
   )
   .rpc_server(&rpc_server)
-  .output::<Vec<Output>>();
+  .run_and_deserialize_output::<Vec<Output>>();
 
   assert_eq!(
     output,
@@ -16,7 +16,13 @@ fn output_found() {
         .parse()
         .unwrap(),
       start: 0,
+<<<<<<< HEAD
       size: 8800000000,
+=======
+      end: 50 * COIN_VALUE,
+      size: 50 * COIN_VALUE,
+      offset: 0,
+>>>>>>> 5c09dd6c38136a95370eb5274d23a38b59306bb8
       rarity: "mythic".parse().unwrap(),
     }]
   );
@@ -31,7 +37,7 @@ fn output_not_found() {
   .rpc_server(&rpc_server)
   .expected_exit_code(1)
   .expected_stderr("error: output not found\n")
-  .run();
+  .run_and_extract_stdout();
 }
 
 #[test]
@@ -41,5 +47,5 @@ fn no_satoshi_index() {
     .rpc_server(&rpc_server)
     .expected_stderr("error: list requires index created with `--index-sats` flag\n")
     .expected_exit_code(1)
-    .run();
+    .run_and_extract_stdout();
 }

@@ -17,16 +17,14 @@ pub struct Output {
 }
 
 impl Traits {
-  pub(crate) fn run(self) -> Result {
-    print_json(Output {
+  pub(crate) fn run(self) -> SubcommandResult {
+    Ok(Box::new(Output {
       number: self.sat.n(),
       decimal: self.sat.decimal().to_string(),
       height: self.sat.height().0,
       epoch: self.sat.epoch().0,
       offset: self.sat.third(),
       rarity: self.sat.rarity(),
-    })?;
-
-    Ok(())
+    }))
   }
 }

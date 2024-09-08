@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 set -euo pipefail
-
 if [ ! -z ${GITHUB_ACTIONS-} ]; then
   set -x
 fi
@@ -24,9 +23,15 @@ OPTIONS:
 EOF
 }
 
+<<<<<<< HEAD
 git=apezord/ord-dogecoin
 crate=ord
 url=https://github.com/apezord/ord-dogecoin
+=======
+git=ordinals/ord
+crate=ord
+url=https://github.com/ordinals/ord
+>>>>>>> 5c09dd6c38136a95370eb5274d23a38b59306bb8
 releases=$url/releases
 
 say() {
@@ -98,7 +103,11 @@ if [ -z ${dest-} ]; then
 fi
 
 if [ -z ${tag-} ]; then
+<<<<<<< HEAD
   tag=$(curl --proto =https --tlsv1.2 -sSf https://api.github.com/repos/apezord/ord-dogecoin/releases/latest |
+=======
+  tag=$(curl --proto =https --tlsv1.2 -sSf https://api.github.com/repos/ordinals/ord/releases/latest |
+>>>>>>> 5c09dd6c38136a95370eb5274d23a38b59306bb8
     grep tag_name |
     cut -d'"' -f4
   )
@@ -113,7 +122,12 @@ if [ -z ${target-} ]; then
     x86_64-Linux) target=x86_64-unknown-linux-gnu;;
     *)
       err 'Could not determine target from output of `uname -m`-`uname -s`, please use `--target`:' $uname_target
+<<<<<<< HEAD
       err 'Please try building from source: https://github.com/apezord/ord-dogecoin#building'
+=======
+      err 'Target architecture is not supported by this install script.'
+      err 'Consider opening an issue or building from source: https://github.com/ordinals/ord'
+>>>>>>> 5c09dd6c38136a95370eb5274d23a38b59306bb8
     ;;
   esac
 fi

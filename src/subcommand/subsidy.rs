@@ -13,7 +13,7 @@ pub struct Output {
 }
 
 impl Subsidy {
-  pub(crate) fn run(self) -> Result {
+  pub(crate) fn run(self) -> SubcommandResult {
     let first = self.height.starting_sat();
 
     let subsidy = self.height.subsidy();
@@ -22,11 +22,16 @@ impl Subsidy {
       bail!("block {} has no subsidy", self.height);
     }
 
-    print_json(Output {
+    Ok(Box::new(Output {
       first: first.0,
       subsidy,
+<<<<<<< HEAD
     })?;
 
     Ok(())
+=======
+      name: first.name(),
+    }))
+>>>>>>> 5c09dd6c38136a95370eb5274d23a38b59306bb8
   }
 }

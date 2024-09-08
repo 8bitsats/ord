@@ -6,7 +6,7 @@ fn find_command_returns_satpoint_for_sat() {
   assert_eq!(
     CommandBuilder::new("--index-sats find 0")
       .rpc_server(&rpc_server)
-      .output::<Output>(),
+      .run_and_deserialize_output::<Output>(),
     Output {
       satpoint: "5b2a3f53f605d62c53e62932dac6925e3d74afa5a4b459745c36d42d0ed26a69:0:0"
         .parse()
@@ -22,7 +22,7 @@ fn unmined_sat() {
     .rpc_server(&rpc_server)
     .expected_stderr("error: sat has not been mined as of index height\n")
     .expected_exit_code(1)
-    .run();
+    .run_and_extract_stdout();
 }
 
 #[test]
@@ -32,5 +32,5 @@ fn no_satoshi_index() {
     .rpc_server(&rpc_server)
     .expected_stderr("error: find requires index created with `--index-sats` flag\n")
     .expected_exit_code(1)
-    .run();
+    .run_and_extract_stdout();
 }

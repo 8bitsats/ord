@@ -1,4 +1,4 @@
-use super::*;
+use {super::*, crate::command_builder::ToArgs, ord::subcommand::wallet::send::Output};
 
 #[test]
 fn run() {
@@ -148,17 +148,20 @@ fn inscription_page_after_send() {
   ))
   .rpc_server(&rpc_server)
   .stdout_regex(".*")
-  .run();
+  .run_and_deserialize_output::<Output>()
+  .transaction;
 
   rpc_server.mine_blocks(1);
-
-  let send = txid.trim();
 
   let ord_server = TestServer::spawn_with_args(&rpc_server, &[]);
   ord_server.assert_response_regex(
     format!("/shibescription/{inscription}"),
     format!(
+<<<<<<< HEAD
       r".*<h1>Shibescription 0</h1>.*<dt>address</dt>\s*<dd class=monospace>bc1qcqgs2pps4u4yedfyl5pysdjjncs8et5utseepv</dd>.*<dt>location</dt>\s*<dd class=monospace>{send}:0:0</dd>.*",
+=======
+      r".*<h1>Inscription 0</h1>.*<dt>address</dt>\s*<dd class=monospace>bc1qcqgs2pps4u4yedfyl5pysdjjncs8et5utseepv</dd>.*<dt>location</dt>\s*<dd class=monospace>{txid}:0:0</dd>.*",
+>>>>>>> 5c09dd6c38136a95370eb5274d23a38b59306bb8
     ),
   )
 }
@@ -183,8 +186,15 @@ fn inscription_content() {
     "text/plain;charset=utf-8"
   );
   assert_eq!(
-    response.headers().get("content-security-policy").unwrap(),
-    "default-src 'unsafe-eval' 'unsafe-inline' data:"
+    response
+      .headers()
+      .get_all("content-security-policy")
+      .into_iter()
+      .collect::<Vec<&http::HeaderValue>>(),
+    &[
+      "default-src 'self' 'unsafe-eval' 'unsafe-inline' data: blob:",
+      "default-src *:*/content/ *:*/blockheight *:*/blockhash *:*/blockhash/ *:*/blocktime 'unsafe-eval' 'unsafe-inline' data: blob:",
+    ]
   );
   assert_eq!(response.bytes().unwrap(), "FOO");
 }
@@ -297,4 +307,68 @@ fn expected_sat_time_is_rounded() {
     "/sat/2099999997689999",
     r".*<dt>timestamp</dt><dd><time>.* \d+:\d+:\d+ UTC</time> \(expected\)</dd>.*",
   );
+}
+
+#[test]
+fn server_runs_with_rpc_user_and_pass_as_env_vars() {
+  let rpc_server = test_bitcoincore_rpc::spawn();
+  rpc_server.mine_blocks(1);
+
+  let tempdir = TempDir::new().unwrap();
+  let port = TcpListener::bind("127.0.0.1:0")
+    .unwrap()
+    .local_addr()
+    .unwrap()
+    .port();
+
+  let mut child = Command::new(executable_path("ord"))
+    .args(format!(
+      "--rpc-url {} --bitcoin-data-dir {} --data-dir {} server --http-port {port} --address 127.0.0.1",
+      rpc_server.url(),
+      tempdir.path().display(),
+      tempdir.path().display()).to_args()
+      )
+      .env("ORD_BITCOIN_RPC_PASS", "bar")
+      .env("ORD_BITCOIN_RPC_USER", "foo")
+      .env("ORD_INTEGRATION_TEST", "1")
+      .current_dir(&tempdir)
+      .spawn().unwrap();
+
+  for i in 0.. {
+    match reqwest::blocking::get(format!("http://127.0.0.1:{port}/status")) {
+      Ok(_) => break,
+      Err(err) => {
+        if i == 400 {
+          panic!("Server failed to start: {err}");
+        }
+      }
+    }
+
+    thread::sleep(Duration::from_millis(25));
+  }
+
+  rpc_server.mine_blocks(1);
+
+  let response = reqwest::blocking::get(format!("http://127.0.0.1:{port}/blockcount")).unwrap();
+  assert_eq!(response.status(), StatusCode::OK);
+  assert_eq!(response.text().unwrap(), "2");
+
+  child.kill().unwrap();
+}
+
+#[test]
+fn missing_credentials() {
+  let rpc_server = test_bitcoincore_rpc::spawn();
+
+  CommandBuilder::new("--bitcoin-rpc-user foo server")
+    .rpc_server(&rpc_server)
+    .expected_exit_code(1)
+    .expected_stderr("error: no bitcoind rpc password specified\n")
+    .run_and_extract_stdout();
+
+  CommandBuilder::new("--bitcoin-rpc-pass bar server")
+    .rpc_server(&rpc_server)
+    .expected_exit_code(1)
+    .expected_stderr("error: no bitcoind rpc user specified\n")
+    .run_and_extract_stdout();
 }
